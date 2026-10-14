@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Posto Fácil — Demo</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Roboto', sans-serif; background: #f0f4f0; }
+
+    /* Phone shell */
+    .phone-shell {
+      width: 360px;
+      min-height: 640px;
+      background: white;
+      border-radius: 36px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 8px #222, 0 0 0 10px #444;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Status bar */
+    .status-bar {
+      background: #2E7D32;
+      color: white;
+      font-size: 10px;
+      padding: 6px 16px 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* App bar */
+    .app-bar {
+      background: #2E7D32;
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .app-bar h1 { font-size: 18px; font-weight: 600; margin: 0; flex: 1; }
+
+    /* Screens */
+    .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .screen.active { display: flex; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 10px;
+      color: #9ca3af;
+      border: none;
+      background: none;
+      transition: color 0.2s;
+    }
+    .nav-btn.active { color: #2E7D32; }
+    .nav-btn svg { display: block; margin: 0 auto 2px; width: 20px; height: 20px; }
+
+    /* Cards */
+    .action-card {
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: transform 0.1s, opacity 0.1s;
+      border: none;
+      width: 100%;
+      text-align: left;
+    }
+    .action-card:active { transform: scale(0.97); opacity: 0.9; }
+
+    /* Station card */
+    .station-card {
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 1px solid #f0f0f0;
+      transition: box-shadow 0.15s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .station-card:active { box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+
+    /* Price chip */
+    .price-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      margin: 2px 2px 2px 0;
+    }
+
+    /* Fuel tabs */
+    .fuel-tab {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      border: none;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      transition: background 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .fuel-tab.active { background: white; color: #2E7D32; font-weight: 600; }
+
+    /* Login gradient */
+    .login-bg {
+      background: linear-gradient(160deg, #1B5E20 0%, #2E7D32 50%, #43A047 100%);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      gap: 16px;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Price grid */
+    .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .price-box {
+      border-radius: 10px;
+      padding: 12px;
+      text-align: left;
+    }
+    .price-box .fuel-name { font-size: 10px; font-weight: 500; margin-bottom: 4px; }
+    .price-box .fuel-value { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+
+    /* Badge */
+    .badge-cheapest {
+      background: #16a34a;
+      color: white;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.3px;
+    }
+
+    /* Scrollable area */
+    .scroll-area { flex: 1; overflow-y: auto; padding: 12px; }
+    .scroll-area::-webkit-scrollbar { width: 3px; }
+    .scroll-area::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+    /* Toast */
+    .toast {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; }
+
+    /* Map placeholder */
+    .map-placeholder {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-bottom: 1px solid #a5d6a7;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Dots on map */
+    .map-dot {
+      position: absolute;
+      width: 14px; height: 14px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .map-dot:hover { transform: rotate(-45deg) scale(1.3); }
+    .map-dot.green { background: #16a34a; }
+    .map-dot.yellow { background: #d97706; }
+    .map-dot.red { background: #dc2626; }
+    .map-dot.gray { background: #6b7280; }
+
+    /* Register form */
+    .form-field {
+      margin-bottom: 10px;
+    }
+    .form-field label { font-size: 11px; font-weight: 600; color: #2E7D32; display: block; margin-bottom: 3px; }
+    .form-field input {
+      width: 100%;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-field input:focus { border-color: #2E7D32; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .btn-primary {
+      width: 100%;
+      background: #2E7D32;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #1B5E20; }
+    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+  </style>
+</head>
+<body class="bg-transparent">
+
+<!-- Outer wrapper centered -->
+<div style="display:flex; flex-direction:column; align-items:center; padding: 16px 8px; gap: 12px;">
+
+  <!-- Demo label -->
+  <div style="background: #FFF8E1; border:1px solid #FFE082; border-radius: 8px; padding: 8px 14px; font-size: 12px; color: #5D4037; max-width: 360px; width:100%; text-align:center;">
+    📱 <strong>Protótipo interativo</strong> — Dados reais dos postos de Ribeirão Preto carregados da API da ANP
+  </div>
+
+  <!-- Phone -->
+  <div class="phone-shell" id="phone">
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span>09:41</span>
+      <span>⚡ 🔋</span>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TELA 1: LOGIN
+    ══════════════════════════════════════ -->
+    <div id="screen-login" class="screen active" style="flex:1;">
+      <div class="login-bg">
+        <!-- App icon -->
+        <div style="background:white; border-radius:22px; width:88px; height:88px; display:flex; align-items:center; justify-content:center; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="1.8">
+            <path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+          </svg>
+        </div>
+
+        <div style="text-align:center;">
+          <h1 style="color:white; font-size:30px; font-weight:700; margin:0 0 6px;">Posto Fácil</h1>
+          <p style="color:rgba(255,255,255,0.75); font-size:14px; margin:0; line-height:1.5;">Encontre o melhor preço de<br>combustível perto de você</p>
+        </div>
+
+        <div style="height: 32px;"></div>
+
+        <!-- Google login button -->
+        <button onclick="doLogin()" id="login-btn"
+          style="background:white; border:none; border-radius:12px; padding:14px 20px; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; font-size:15px; font-weight:600; color:#333; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Entrar com Google
+        </button>
+
+        <p style="color:rgba(255,255,255,0.5); font-size:10px; text-align:center; margin:0;">
+          Ao entrar, você concorda com os Termos de Uso
+        </p>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TELA 2: HOME
+    ══════════════════════════════════════ -->
+    <div id="screen-home" class="screen" style="background:#f9fafb;">
+      <div class="app-bar">
+        <svg width="22" height="22" fill="white" viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <h1>Posto Fácil</h1>
+        <div style="width:32px;height:32px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="showToast('Menu do perfil')">
+          <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </div>
+      </div>
+
+      <div class="scroll-area" style="padding:20px 16px;">
+        <h2 style="font-size:20px; font-weight:700; color:#1B5E20; margin:0 0 4px;">Olá, Matheus! 👋</h2>
+        <p style="font-size:13px; color:#6b7280; margin:0 0 24px;">O que você quer fazer hoje?</p>
+
+        <!-- Card: Encontrar posto -->
+        <button class="action-card" onclick="goToScreen('map')"
+          style="background: linear-gradient(135deg, #1565C0, #1976D2); margin-bottom:14px;">
+          <div style="background:rgba(255,255,255,0.2);border-radius:12px;padding:12px;flex-shrink:0;">
+            <svg width="32" height="32" fill="white" viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:17px;font-weight:700;margin-bottom:4px;">Encontrar um Posto</div>
+            <div style="font-size:12px;opacity:0.8;line-height:1.4;">Veja os postos mais próximos e compare os preços no mapa</div>
+          </div>
+          <svg width="16" height="16" fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+        </button>
+
+        <!-- Card: Registrar preço -->
+        <button class="action-card" onclick="goToScreen('register')"
+          style="background: linear-gradient(135deg, #2E7D32, #43A047);">
+          <div style="background:rgba(255,255,255,0.2);border-radius:12px;padding:12px;flex-shrink:0;">
+            <svg width="32" height="32" fill="white" viewBox="0 0 24 24"><path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:17px;font-weight:700;margin-bottom:4px;">Registrar um Preço</div>
+            <div style="font-size:12px;opacity:0.8;line-height:1.4;">Fotografe a tabela do posto e ajude outros motoristas!</div>
+          </div>
+          <svg width="16" height="16" fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+        </button>
+
+        <!-- Info banner -->
+        <div style="background:#FFF8E1;border:1px solid #FFE082;border-radius:10px;padding:12px;display:flex;gap:10px;margin-top:24px;align-items:flex-start;">
+          <svg width="18" height="18" fill="#F57F17" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <p style="font-size:11px;color:#5D4037;margin:0;line-height:1.5;">Os preços são registrados pelos usuários. Verifique sempre a data da última atualização.</p>
+        </div>
+
+        <!-- ANP badge -->
+        <div style="margin-top:14px;background:#E8F5E9;border:1px solid #A5D6A7;border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:center;">
+          <svg width="18" height="18" fill="#2E7D32" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <p style="font-size:11px;color:#2E7D32;margin:0;line-height:1.5;"><strong>Postos cadastrados pela ANP:</strong> dados oficiais do governo importados automaticamente.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TELA 3: MAPA / LISTA DE POSTOS
+    ══════════════════════════════════════ -->
+    <div id="screen-map" class="screen" style="background:#f9fafb;">
+      <!-- AppBar com filtros -->
+      <div class="app-bar" style="flex-direction:column;gap:8px;padding-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;width:100%;">
+          <button onclick="goToScreen('home')" style="background:none;border:none;color:white;cursor:pointer;padding:2px;">
+            <svg width="22" height="22" fill="white" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          </button>
+          <span style="font-size:16px;font-weight:600;flex:1;">Postos Próximos</span>
+          <button onclick="toggleView()" id="view-toggle-btn" style="background:none;border:none;color:white;cursor:pointer;font-size:11px;background:rgba(255,255,255,0.2);padding:4px 8px;border-radius:12px;">
+            📋 Lista
+          </button>
+        </div>
+        <!-- Fuel filter tabs -->
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;width:100%;">
+          <button class="fuel-tab active" onclick="selectFuel('gasolina_comum', this)">Gasolina Comum</button>
+          <button class="fuel-tab" onclick="selectFuel('gasolina_aditivada', this)">Aditivada</button>
+          <button class="fuel-tab" onclick="selectFuel('etanol', this)">Álcool</button>
+          <button class="fuel-tab" onclick="selectFuel('diesel', this)">Diesel</button>
+        </div>
+      </div>
+
+      <!-- Map view -->
+      <div id="map-view" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <!-- Fake map -->
+        <div class="map-placeholder" id="map-area">
+          <div style="position:absolute;inset:0;opacity:0.12;background:repeating-linear-gradient(0deg,#4CAF50,#4CAF50 1px,transparent 1px,transparent 30px),repeating-linear-gradient(90deg,#4CAF50,#4CAF50 1px,transparent 1px,transparent 30px);"></div>
+          <svg width="40" height="40" fill="#9ca3af" viewBox="0 0 24 24" style="opacity:0.4"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5z"/></svg>
+          <span id="map-label" style="font-size:12px;color:#6b7280;font-weight:500;z-index:1;">Ribeirão Preto, SP</span>
+          <!-- Map pins will be injected here -->
+        </div>
+
+        <!-- Loading -->
+        <div id="loading-bar" style="background:#2E7D32;height:3px;width:0%;transition:width 0.5s;flex-shrink:0;"></div>
+
+        <!-- Stations list below map -->
+        <div class="scroll-area" id="stations-list" style="flex:1;">
+          <div id="loading-msg" style="text-align:center;padding:20px;color:#6b7280;font-size:13px;">
+            <div class="spinner" style="margin:0 auto 10px;border-color:rgba(46,125,50,0.2);border-top-color:#2E7D32;"></div>
+            Buscando postos na API da ANP...
+          </div>
+          <div id="stations-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TELA 4: DETALHE DO POSTO
+    ══════════════════════════════════════ -->
+    <div id="screen-detail" class="screen" style="background:#f9fafb;">
+      <div class="app-bar">
+        <button onclick="goToScreen('map')" style="background:none;border:none;color:white;cursor:pointer;padding:2px;">
+          <svg width="22" height="22" fill="white" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h1 id="detail-title" style="font-size:15px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></h1>
+        <button onclick="showToast('Abrindo Google Maps...')" style="background:rgba(255,255,255,0.2);border:none;color:white;cursor:pointer;padding:6px 10px;border-radius:16px;font-size:11px;font-weight:600;">
+          🗺️ Rota
+        </button>
+      </div>
+
+      <div class="scroll-area">
+        <!-- Header card -->
+        <div style="background:#2E7D32;border-radius:12px;padding:16px;margin-bottom:12px;color:white;">
+          <div id="detail-name" style="font-size:16px;font-weight:700;margin-bottom:4px;"></div>
+          <div id="detail-address" style="font-size:12px;opacity:0.8;margin-bottom:6px;"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div id="detail-updated" style="font-size:11px;opacity:0.7;"></div>
+            <div id="detail-promo" style="display:none;background:#FFA000;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;">🎯 PROMOÇÃO</div>
+          </div>
+        </div>
+
+        <!-- Prices grid -->
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#1a1a1a;">💰 Preços Atuais</div>
+        <div class="price-grid" id="detail-prices"></div>
+
+        <!-- Bandeira / ANP info -->
+        <div id="detail-anp" style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:600;color:#2E7D32;margin-bottom:4px;">🏛️ Dados ANP</div>
+          <div id="detail-anp-content" style="font-size:11px;color:#388E3C;line-height:1.6;"></div>
+        </div>
+
+        <!-- Combustíveis disponíveis -->
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#1a1a1a;">⛽ Combustíveis Disponíveis</div>
+        <div id="detail-fuels" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+
+        <!-- History placeholder -->
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#1a1a1a;">📋 Histórico de Preços</div>
+        <div style="background:#f3f4f6;border-radius:10px;padding:16px;text-align:center;color:#9ca3af;font-size:12px;">
+          Seja o primeiro a registrar o preço!<br>
+          <button onclick="goToScreen('register')" style="margin-top:8px;background:#2E7D32;color:white;border:none;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;">
+            📸 Registrar Agora
+          </button>
+        </div>
+
+        <!-- Navigate button -->
+        <button onclick="showToast('Abrindo Google Maps...')" class="btn-primary" style="margin-top:16px;">
+          🗺️ Como Chegar
+        </button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TELA 5: REGISTRAR PREÇO
+    ══════════════════════════════════════ -->
+    <div id="screen-register" class="screen" style="background:#f9fafb;">
+      <div class="app-bar">
+        <button onclick="goToScreen('home')" style="background:none;border:none;color:white;cursor:pointer;padding:2px;">
+          <svg width="22" height="22" fill="white" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h1>Registrar Preço</h1>
+      </div>
+
+      <div class="scroll-area">
+        <!-- Photo area -->
+        <div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:6px;">📸 Foto da Tabela</div>
+        <div id="photo-area" onclick="simulateOCR()" style="border:2px dashed #ccc;border-radius:12px;height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;margin-bottom:14px;transition:border-color 0.2s;background:#fafafa;">
+          <svg width="36" height="36" fill="#9ca3af" viewBox="0 0 24 24"><path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+          <span style="font-size:12px;color:#9ca3af;">Toque para tirar uma foto</span>
+          <span style="font-size:10px;color:#bbb;">(simulação — preços serão preenchidos automaticamente)</span>
+        </div>
+
+        <!-- Station name -->
+        <div class="form-field">
+          <label>🏪 Nome do Posto *</label>
+          <input type="text" id="reg-name" placeholder="Ex: Posto Shell Centro">
+        </div>
+
+        <!-- Location -->
+        <div style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <svg width="16" height="16" fill="#2E7D32" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          <span style="font-size:11px;color:#2E7D32;flex:1;">Av. Independência, 1500, Ribeirão Preto, SP</span>
+          <span style="font-size:10px;color:#2E7D32;cursor:pointer;" onclick="showToast('Localização atualizada!')">Atualizar</span>
+        </div>
+
+        <!-- Prices -->
+        <div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:6px;">💰 Preços (R$)</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label style="color:#d97706;">Gasolina Comum</label>
+            <input type="number" id="reg-common" placeholder="0,00" step="0.01" min="0">
+          </div>
+          <div class="form-field">
+            <label style="color:#dc2626;">Aditivada</label>
+            <input type="number" id="reg-premium" placeholder="0,00" step="0.01" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label style="color:#16a34a;">Álcool / Etanol</label>
+            <input type="number" id="reg-ethanol" placeholder="0,00" step="0.01" min="0">
+          </div>
+          <div class="form-field">
+            <label style="color:#475569;">Diesel</label>
+            <input type="number" id="reg-diesel" placeholder="0,00" step="0.01" min="0">
+          </div>
+        </div>
+
+        <!-- Promotion -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <label style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;">
+            <input type="checkbox" id="reg-promo" style="opacity:0;width:0;height:0;" onchange="togglePromo()">
+            <span id="toggle-track" style="position:absolute;inset:0;background:#ccc;border-radius:11px;cursor:pointer;transition:background 0.2s;"></span>
+            <span id="toggle-thumb" style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></span>
+          </label>
+          <span style="font-size:13px;color:#374151;">Possui promoção ativa</span>
+        </div>
+        <div id="promo-field" class="form-field" style="display:none;">
+          <label>🎯 Descrição da promoção</label>
+          <input type="text" id="reg-promo-desc" placeholder="Ex: 5% desconto no débito">
+        </div>
+
+        <button class="btn-primary" onclick="submitPrice()" style="margin-bottom:8px;">
+          ✅ Registrar Preço
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom navigation (visible when not in login) -->
+    <div class="bottom-nav" id="bottom-nav" style="display:none;">
+      <button class="nav-btn active" id="nav-home" onclick="goToScreen('home')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        Início
+      </button>
+      <button class="nav-btn" id="nav-map" onclick="goToScreen('map')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+        Mapa
+      </button>
+      <button class="nav-btn" id="nav-register" onclick="goToScreen('register')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+        Registrar
+      </button>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div style="max-width:360px;width:100%;font-size:10px;color:#9ca3af;text-align:center;padding:0 8px;">
+    Simulação do app • Postos carregados ao vivo da API pública da ANP (gov.br)
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// APP STATE
+// ══════════════════════════════════════
+let currentScreen = 'login';
+let allStations = [];
+let selectedFuel = 'gasolina_comum';
+let showingMap = false;
+let mapPins = [];
+
+// Preços simulados (em produção vêm do Firebase)
+const simulatedPrices = {
+  gasolina_comum:    [5.69, 5.79, 5.85, 5.89, 5.95, 5.99, 6.05, 6.09],
+  gasolina_aditivada:[6.09, 6.19, 6.25, 6.29, 6.35, 6.45, 6.49, 6.59],
+  etanol:            [3.99, 4.09, 4.15, 4.19, 4.25, 4.35, 4.39, 4.49],
+  diesel:            [5.39, 5.49, 5.55, 5.59, 5.69, 5.79, 5.89, 5.99],
+};
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function goToScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  currentScreen = name;
+
+  const nav = document.getElementById('bottom-nav');
+  nav.style.display = (name === 'login') ? 'none' : 'flex';
+
+  // Update nav active state
+  ['home','map','register'].forEach(n => {
+    const btn = document.getElementById('nav-' + n);
+    if (btn) btn.classList.toggle('active', n === name);
+  });
+
+  if (name === 'map' && allStations.length === 0) {
+    fetchAnpStations();
+  }
+}
+
+// ══════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════
+function doLogin() {
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto;border-color:rgba(0,0,0,0.1);border-top-color:#333;"></div>';
+  btn.disabled = true;
+  setTimeout(() => {
+    goToScreen('home');
+  }, 1400);
+}
+
+// ══════════════════════════════════════
+// ANP API FETCH
+// ══════════════════════════════════════
+async function fetchAnpStations() {
+  const loadingBar = document.getElementById('loading-bar');
+  const loadingMsg = document.getElementById('loading-msg');
+
+  // Animate loading bar
+  loadingBar.style.width = '30%';
+  setTimeout(() => loadingBar.style.width = '60%', 400);
+
+  try {
+    const resp = await fetch(
+      'https://revendedoresapi.anp.gov.br/v1/combustivel?uf=SP&municipio=RIBEIRAO%20PRETO',
+      { headers: { 'Accept': 'application/json' } }
+    );
+    const data = await resp.json();
+
+    loadingBar.style.width = '100%';
+    setTimeout(() => loadingBar.style.width = '0%', 500);
+
+    if (data.succeeded && data.data) {
+      allStations = data.data
+        .filter(s => s.razaoSocial && s.razaoSocial.trim() !== '')
+        .map((s, i) => ({
+          ...s,
+          // Assign simulated prices for demo
+          prices: {
+            gasolina_comum:     simulatedPrices.gasolina_comum[i % 8],
+            gasolina_aditivada: simulatedPrices.gasolina_aditivada[i % 8],
+            etanol:             simulatedPrices.etanol[i % 8],
+            diesel:             simulatedPrices.diesel[i % 8],
+          },
+          hasPromo: i % 7 === 0,
+        }));
+      renderStations();
+      renderMapPins();
+      if (loadingMsg) loadingMsg.style.display = 'none';
+    }
+  } catch (e) {
+    loadingBar.style.width = '0%';
+    if (loadingMsg) loadingMsg.innerHTML = `
+      <div style="color:#dc2626;font-size:13px;">⚠️ Não foi possível carregar da API da ANP.<br>
+      <small style="color:#9ca3af;">Verifique sua conexão com a internet.</small></div>
+    `;
+  }
+}
+
+// ══════════════════════════════════════
+// RENDER STATIONS LIST
+// ══════════════════════════════════════
+function renderStations() {
+  const container = document.getElementById('stations-container');
+  if (!container) return;
+
+  // Sort by selected fuel price
+  const sorted = [...allStations].sort((a, b) =>
+    (a.prices[selectedFuel] || 99) - (b.prices[selectedFuel] || 99)
+  );
+
+  const fuelLabels = {
+    gasolina_comum: 'Comum', gasolina_aditivada: 'Aditivada',
+    etanol: 'Álcool', diesel: 'Diesel'
+  };
+
+  const html = sorted.slice(0, 20).map((s, i) => {
+    const price = s.prices[selectedFuel];
+    const name = toTitleCase(s.razaoSocial);
+    const addr = [s.bairro, s.municipio].filter(Boolean).join(', ');
+    const dist = (0.3 + Math.random() * 8).toFixed(1);
+    const isLowest = i === 0;
+
+    let markerColor = price < 5.80 ? '#16a34a' : price < 6.00 ? '#d97706' : '#dc2626';
+
+    return `
+      <div class="station-card" onclick="showDetail(${JSON.stringify(s).replace(/"/g, '&quot;')})">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div style="background:${isLowest ? '#dcfce7' : '#f3f4f6'};border-radius:10px;padding:10px;flex-shrink:0;">
+            <svg width="20" height="20" fill="${isLowest ? '#16a34a' : '#6b7280'}" viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+              <span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+              ${isLowest ? '<span class="badge-cheapest">MAIS BARATO</span>' : ''}
+              ${s.hasPromo ? '<span style="font-size:9px;color:#d97706;">🎯</span>' : ''}
+            </div>
+            <div style="font-size:11px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${addr}</div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:1px;">📍 ${dist} km</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:17px;font-weight:700;color:${isLowest ? '#16a34a' : '#111'};">R$ ${price.toFixed(2)}</div>
+            <div style="font-size:10px;color:#9ca3af;">${fuelLabels[selectedFuel]}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = html || '<div style="text-align:center;color:#9ca3af;padding:20px;font-size:13px;">Nenhum posto encontrado.</div>';
+}
+
+// ══════════════════════════════════════
+// RENDER MAP PINS
+// ══════════════════════════════════════
+function renderMapPins() {
+  const mapArea = document.getElementById('map-area');
+  // Remove old pins
+  document.querySelectorAll('.map-dot').forEach(d => d.remove());
+  document.getElementById('map-label').textContent = `${allStations.length} postos em Ribeirão Preto`;
+
+  const withGps = allStations.filter(s => s.latitude && parseFloat(s.latitude) !== 0);
+  const sample = withGps.slice(0, 12);
+
+  // Find bounds
+  const lats = sample.map(s => parseFloat(s.latitude));
+  const lngs = sample.map(s => parseFloat(s.longitude));
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+
+  sample.forEach((s, i) => {
+    const lat = parseFloat(s.latitude);
+    const lng = parseFloat(s.longitude);
+    const price = s.prices[selectedFuel];
+
+    // Normalize to map area (40px padding)
+    const xPct = maxLng === minLng ? 0.5 : (lng - minLng) / (maxLng - minLng);
+    const yPct = maxLat === minLat ? 0.5 : 1 - (lat - minLat) / (maxLat - minLat);
+    const x = 30 + xPct * 280;
+    const y = 15 + yPct * 130;
+
+    const colorClass = price < 5.80 ? 'green' : price < 6.00 ? 'yellow' : 'red';
+
+    const pin = document.createElement('div');
+    pin.className = `map-dot ${colorClass}`;
+    pin.style.cssText = `left:${x}px;top:${y}px;`;
+    pin.title = `${toTitleCase(s.razaoSocial)}: R$ ${price.toFixed(2)}`;
+    pin.onclick = (e) => { e.stopPropagation(); showDetail(s); };
+    mapArea.appendChild(pin);
+  });
+}
+
+// ══════════════════════════════════════
+// STATION DETAIL
+// ══════════════════════════════════════
+function showDetail(station) {
+  // If station is a string (from onclick attribute), parse it
+  if (typeof station === 'string') {
+    try { station = JSON.parse(station); } catch(e) { return; }
+  }
+
+  const name = toTitleCase(station.razaoSocial);
+  const addr = [station.endereco, station.bairro, station.municipio].filter(Boolean).join(', ');
+
+  document.getElementById('detail-title').textContent = name;
+  document.getElementById('detail-name').textContent = name;
+  document.getElementById('detail-address').textContent = addr;
+  document.getElementById('detail-updated').textContent = '📅 Atualizado há 2 horas';
+
+  const promo = document.getElementById('detail-promo');
+  promo.style.display = station.hasPromo ? 'block' : 'none';
+
+  // Price grid
+  const prices = station.prices || {};
+  document.getElementById('detail-prices').innerHTML = `
+    <div class="price-box" style="background:#FFF3E0;border:1px solid #FFE0B2;">
+      <div class="fuel-name" style="color:#E65100;">⛽ Gasolina Comum</div>
+      <div class="fuel-value">R$ ${prices.gasolina_comum?.toFixed(2) ?? '—'}</div>
+    </div>
+    <div class="price-box" style="background:#FFEBEE;border:1px solid #FFCDD2;">
+      <div class="fuel-name" style="color:#C62828;">⭐ Aditivada</div>
+      <div class="fuel-value">R$ ${prices.gasolina_aditivada?.toFixed(2) ?? '—'}</div>
+    </div>
+    <div class="price-box" style="background:#E8F5E9;border:1px solid #C8E6C9;">
+      <div class="fuel-name" style="color:#1B5E20;">🌿 Álcool</div>
+      <div class="fuel-value">R$ ${prices.etanol?.toFixed(2) ?? '—'}</div>
+    </div>
+    <div class="price-box" style="background:#ECEFF1;border:1px solid #CFD8DC;">
+      <div class="fuel-name" style="color:#37474F;">🚛 Diesel</div>
+      <div class="fuel-value">R$ ${prices.diesel?.toFixed(2) ?? '—'}</div>
+    </div>
+  `;
+
+  // ANP info
+  document.getElementById('detail-anp-content').innerHTML = `
+    <strong>Autorização:</strong> ${station.autorizacao || '—'}<br>
+    <strong>Bandeira:</strong> ${station.distribuidora || 'Bandeira Branca'}<br>
+    <strong>CNPJ:</strong> ${formatCNPJ(station.cnpj || '')}
+    ${station.latitude ? `<br><strong>GPS:</strong> ${parseFloat(station.latitude).toFixed(4)}, ${parseFloat(station.longitude).toFixed(4)}` : ''}
+  `;
+
+  // Available fuels
+  const fuels = (station.produtos || []).map(p =>
+    `<span class="price-chip" style="background:#E8F5E9;color:#2E7D32;">${p.produto}</span>`
+  ).join('');
+  document.getElementById('detail-fuels').innerHTML = fuels || '<span style="color:#9ca3af;font-size:12px;">Não informado</span>';
+
+  goToScreen('detail');
+}
+
+// ══════════════════════════════════════
+// FUEL FILTER
+// ══════════════════════════════════════
+function selectFuel(fuel, btn) {
+  selectedFuel = fuel;
+  document.querySelectorAll('.fuel-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  if (allStations.length > 0) {
+    renderStations();
+    renderMapPins();
+  }
+}
+
+// ══════════════════════════════════════
+// TOGGLE MAP / LIST
+// ══════════════════════════════════════
+function toggleView() {
+  showingMap = !showingMap;
+  const btn = document.getElementById('view-toggle-btn');
+  const mapArea = document.getElementById('map-area');
+  btn.textContent = showingMap ? '📋 Lista' : '🗺️ Mapa';
+  mapArea.style.display = showingMap ? 'none' : '';
+}
+
+// ══════════════════════════════════════
+// REGISTER / OCR SIMULATION
+// ══════════════════════════════════════
+function simulateOCR() {
+  const photoArea = document.getElementById('photo-area');
+  photoArea.innerHTML = '<div class="spinner" style="margin:0 auto;border-color:rgba(46,125,50,0.2);border-top-color:#2E7D32;"></div><span style="font-size:12px;color:#6b7280;">Lendo preços da foto...</span>';
+  photoArea.style.borderColor = '#2E7D32';
+  photoArea.style.background = '#f0fdf4';
+
+  setTimeout(() => {
+    // Fill in simulated OCR values
+    document.getElementById('reg-common').value = '5.89';
+    document.getElementById('reg-premium').value = '6.25';
+    document.getElementById('reg-ethanol').value = '4.19';
+    document.getElementById('reg-diesel').value = '5.49';
+
+    photoArea.innerHTML = `
+      <svg width="32" height="32" fill="#2E7D32" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      <span style="font-size:12px;color:#2E7D32;font-weight:600;">✅ Preços detectados automaticamente!</span>
+      <span style="font-size:10px;color:#16a34a;">Confirme ou edite os valores abaixo</span>
+    `;
+    showToast('✅ Preços lidos da foto!');
+  }, 1800);
+}
+
+function togglePromo() {
+  const checked = document.getElementById('reg-promo').checked;
+  document.getElementById('promo-field').style.display = checked ? 'block' : 'none';
+  document.getElementById('toggle-track').style.background = checked ? '#2E7D32' : '#ccc';
+  document.getElementById('toggle-thumb').style.left = checked ? '20px' : '2px';
+}
+
+function submitPrice() {
+  const name = document.getElementById('reg-name').value.trim();
+  if (!name) { showToast('Por favor, informe o nome do posto.'); return; }
+
+  const btn = document.querySelector('#screen-register .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = '✅ Registrar Preço';
+    showToast('🎉 Preço registrado! Obrigado!');
+    // Reset form
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-common').value = '';
+    document.getElementById('reg-premium').value = '';
+    document.getElementById('reg-ethanol').value = '';
+    document.getElementById('reg-diesel').value = '';
+    document.getElementById('photo-area').innerHTML = `
+      <svg width="36" height="36" fill="#9ca3af" viewBox="0 0 24 24"><path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+      <span style="font-size:12px;color:#9ca3af;">Toque para tirar uma foto</span>
+      <span style="font-size:10px;color:#bbb;">(simulação — preços serão preenchidos automaticamente)</span>
+    `;
+    document.getElementById('photo-area').style.borderColor = '#ccc';
+    document.getElementById('photo-area').style.background = '#fafafa';
+    setTimeout(() => goToScreen('home'), 1500);
+  }, 1200);
+}
+
+// ══════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function toTitleCase(str) {
+  const skip = ['DE','DO','DA','E','EM','A','LTDA','EIRELI','SA','S/A'];
+  return (str || '').split(' ').map((w, i) => {
+    if (i > 0 && skip.includes(w)) return w.toLowerCase();
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(' ');
+}
+
+function formatCNPJ(cnpj) {
+  cnpj = cnpj.replace(/\D/g, '');
+  if (cnpj.length !== 14) return cnpj;
+  return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+}
+</script>
+</body>
+</html>

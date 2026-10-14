@@ -1,0 +1,62 @@
+name: posto_facil
+description: App de preços de combustível para Ribeirão Preto
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase - Banco de dados na nuvem
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  firebase_storage: ^12.3.3
+
+  # Google Maps - Mapa interativo
+  google_maps_flutter: ^2.9.0
+
+  # GPS / Localização
+  geolocator: ^13.0.1
+  geocoding: ^3.0.0
+
+  # Câmera e galeria
+  image_picker: ^1.1.2
+
+  # OCR - Leitura automática de texto em fotos
+  google_mlkit_text_recognition: ^0.14.0
+
+  # Permissões (câmera, localização, etc)
+  permission_handler: ^11.3.1
+
+  # Imagens da internet com cache
+  cached_network_image: ^3.4.1
+
+  # Formatação de datas e moedas em português
+  intl: ^0.19.0
+
+  # Abrir links externos (Google Maps, sites)
+  url_launcher: ^6.3.1
+
+  # Login com Google
+  google_sign_in: ^6.2.1
+
+  # Ícones bonitos
+  cupertino_icons: ^1.0.8
+
+  # Requisições HTTP (para a API da ANP)
+  http: ^1.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/

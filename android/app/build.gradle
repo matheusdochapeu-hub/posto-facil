@@ -1,0 +1,53 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // Plugin do Flutter
+    id "dev.flutter.flutter-gradle-plugin"
+    // Plugin do Firebase
+    id "com.google.gms.google-services"
+}
+
+android {
+    namespace = "com.postofacil.app"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    defaultConfig {
+        // ID único do app na Play Store (como um "CPF" do seu app)
+        applicationId = "com.postofacil.app"
+
+        minSdk = 21          // Android 5.0 (cobre 99%+ dos dispositivos)
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+
+        multiDexEnabled true  // Necessário para apps com muitas dependências
+    }
+
+    buildTypes {
+        release {
+            // Configurações para o app de produção (Play Store)
+            signingConfig = signingConfigs.debug  // Mude para keystore real antes de publicar
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+dependencies {
+    // Suporte para muitas dependências
+    implementation "androidx.multidex:multidex:2.0.1"
+}
